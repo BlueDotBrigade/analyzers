@@ -44,11 +44,6 @@ namespace BlueDotBrigade.Analyzers.Tests
 
             // code-violations.cs includes a leading blank line to stabilize spans
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(4, 11, 4, 19)); // FooClass (none) -> not triggered by 'foo'; keep as in prior? We'll keep actual triggers:
-            // Update expectations to the actual blocked terms: Client, Cust, Temp
-            // In our sample, we'll trigger on 'tempValue' only. See code-violations.cs content below.
-            test.ExpectedDiagnostics.Clear();
-            test.ExpectedDiagnostics.Add(
                 CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(6, 21, 6, 30)); // tempValue contains "temp"
 
             await test.RunAsync();
@@ -112,14 +107,13 @@ namespace BlueDotBrigade.Analyzers.Tests
 
             // Intentionally do NOT add any AdditionalFiles -> analyzer should synthesize default DSL
             // Default DSL blocks "Client" and "Cust" in favor of "Customer" (and is case sensitive),
-            // plus the one-off also blocks "Client". Our sample will still trigger on 'temp'? Not from default.
-            // We'll provide a 'code-violations-default.cs' that triggers via "Client" usage.
+            // plus the one-off also blocks "Client".
 
             test.TestCode = new Daten().AsString("code-violations-defaultdsl.cs");
 
             // Expected: the default DSL blocks "Client" (case-sensitive). Ensure identifier contains "Client".
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 11, 5, 24)); // e.g., class ClientController
+                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 11, 5, 26)); // class ClientController
 
             await test.RunAsync();
         }

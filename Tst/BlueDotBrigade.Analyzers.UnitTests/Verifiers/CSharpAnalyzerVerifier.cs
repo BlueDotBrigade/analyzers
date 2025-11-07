@@ -1,14 +1,14 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing.MSTest;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
+using BlueDotBrigade.Analyzers;
 
 namespace BlueDotBrigade.Analyzers.Tests.Verifiers
 {
     internal static class CSharpAnalyzerVerifier
     {
-        public class Test : CSharpAnalyzerTest<BlueDotBrigade.Analyzers.DslTermAnalyzer, MSTestVerifier>
+        public class Test : CSharpAnalyzerTest<DslTermAnalyzer, MSTestVerifier>
         {
             public Test()
             {
