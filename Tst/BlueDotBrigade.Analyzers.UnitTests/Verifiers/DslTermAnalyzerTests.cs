@@ -1,8 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
-using BlueDotBrigade.DatenLokator.TestTools;
 using BlueDotBrigade.Analyzers.Tests.Verifiers;
-using Microsoft.CodeAnalysis.Testing;
+using BlueDotBrigade.DatenLokator.TestTools;
+using BlueDotBrigade.DatenLokator.TestTools.Configuration;
+
 
 namespace BlueDotBrigade.Analyzers.Tests
 {
@@ -20,11 +21,11 @@ namespace BlueDotBrigade.Analyzers.Tests
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = Lokator.Get().AsString("code-clean.cs")
+                TestCode = new Daten().AsString("code-clean.cs")
             };
 
             // DSL that doesn't block anything present in code
-            var xml = Lokator.Get().AsString("dsl-simple.xml");
+            var xml = new Daten().AsString("dsl-simple.xml");
             test.TestState.AdditionalFiles.Add(("dsl.config.xml", xml)); // filename the analyzer looks for
 
             await test.RunAsync();
@@ -35,10 +36,10 @@ namespace BlueDotBrigade.Analyzers.Tests
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = Lokator.Get().AsString("code-violations.cs"),
+                TestCode = new Daten().AsString("code-violations.cs"),
             };
 
-            var xml = Lokator.Get().AsString("dsl-prefer-customer.xml"); // matches the new schema
+            var xml = new Daten().AsString("dsl-prefer-customer.xml"); // matches the new schema
             test.TestState.AdditionalFiles.Add(("dsl.config.xml", xml));
 
             // code-violations.cs includes a leading blank line to stabilize spans
@@ -58,10 +59,10 @@ namespace BlueDotBrigade.Analyzers.Tests
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = Lokator.Get().AsString("code-violations.cs"),
+                TestCode = new Daten().AsString("code-violations.cs"),
             };
 
-            var xmlSolution = Lokator.Get().AsString("dsl-prefer-customer.xml");
+            var xmlSolution = new Daten().AsString("dsl-prefer-customer.xml");
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
             test.ExpectedDiagnostics.Add(
@@ -75,15 +76,15 @@ namespace BlueDotBrigade.Analyzers.Tests
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = Lokator.Get().AsString("code-violations.cs"),
+                TestCode = new Daten().AsString("code-violations.cs"),
             };
 
             // Project-level DSL that blocks nothing in the sample (only 'xyz')
-            var xmlProject = Lokator.Get().AsString("dsl-simple.xml");
+            var xmlProject = new Daten().AsString("dsl-simple.xml");
             test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", xmlProject));
 
             // Solution-level DSL that would block 'temp'
-            var xmlSolution = Lokator.Get().AsString("dsl-prefer-customer.xml");
+            var xmlSolution = new Daten().AsString("dsl-prefer-customer.xml");
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
             // Tell analyzer that project dir == src/TestProj so it prefers that file
@@ -106,7 +107,7 @@ namespace BlueDotBrigade.Analyzers.Tests
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = Lokator.Get().AsString("code-violations.cs"),
+                TestCode = new Daten().AsString("code-violations.cs"),
             };
 
             // Intentionally do NOT add any AdditionalFiles -> analyzer should synthesize default DSL
@@ -114,7 +115,7 @@ namespace BlueDotBrigade.Analyzers.Tests
             // plus the one-off also blocks "Client". Our sample will still trigger on 'temp'? Not from default.
             // We'll provide a 'code-violations-default.cs' that triggers via "Client" usage.
 
-            test.TestCode = Lokator.Get().AsString("code-violations-defaultdsl.cs");
+            test.TestCode = new Daten().AsString("code-violations-defaultdsl.cs");
 
             // Expected: the default DSL blocks "Client" (case-sensitive). Ensure identifier contains "Client".
             test.ExpectedDiagnostics.Add(
