@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dsl>
+  <!-- One-off -->
+  <term prefer="Customer" block="Client" case="sensitive"/>
+
+  <!-- One-to-many -->
+  <term prefer="Customer" case="sensitive">
+    <alias block="Client"/>
+    <alias block="Cust"/>
+  </term>
+
+  <!-- Add 'Temporary' line if you want 'temp' to be blocked: -->
+  <!-- <term prefer="Temporary" block="Temp" case="insensitive"/> -->
+</dsl>

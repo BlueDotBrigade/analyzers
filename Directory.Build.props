@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <!-- Teams can rename the file without code changes -->
+    <AnalyzerDslFileName>dsl.config.xml</AnalyzerDslFileName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Make MSBuild project dir & property visible to the analyzer -->
+    <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <CompilerVisibleProperty Include="AnalyzerDslFileName" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Solution-level default DSL file (if present) -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)$(AnalyzerDslFileName)"
+                     Condition="Exists('$(MSBuildThisFileDirectory)$(AnalyzerDslFileName)')" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dsl>
+  <!-- Blocks 'xyz' only (so our sample code won't match) -->
+  <term prefer="Anything" block="xyz" case="sensitive"/>
+</dsl>
