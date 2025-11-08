@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
+using BlueDotBrigade.Analyzers.Dsl;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -25,18 +27,6 @@ using Microsoft.CodeAnalysis.Diagnostics;
 public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "BDB001";
-    private const string DefaultDslFileName = "dsl.config.xml";
-
-    private static readonly string DefaultDslXml = """
-    <dsl>
-      <term prefer="Customer" block="Client" case="sensitive"/>
-      <term prefer="Customer" case="sensitive">
-        <alias block="Client"/>
-        <alias block="Cust"/>
-      </term>
-    </dsl>
-    """;
-
     private static readonly DiagnosticDescriptor Rule = new(
         id: DiagnosticId,
         title: "Blocked term in identifier",
@@ -96,7 +86,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
             {
                 startCtx.RegisterCompilationEndAction(endCtx =>
                 {
-                    var diag = Diagnostic.Create(MissingConfigRule, Location.None, targetFileName, DefaultDslXml);
+                    var diag = Diagnostic.Create(MissingConfigRule, Location.None, targetFileName, DslDefaults.DefaultDslXml);
                     endCtx.ReportDiagnostic(diag);
                 });
             }
@@ -137,7 +127,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
     {
         options.AnalyzerConfigOptionsProvider.GlobalOptions
             .TryGetValue("build_property.AnalyzerDslFileName", out var configuredName);
-        return string.IsNullOrWhiteSpace(configuredName) ? DefaultDslFileName : configuredName.Trim();
+        return string.IsNullOrWhiteSpace(configuredName) ? DslDefaults.DefaultDslFileName : configuredName.Trim();
     }
 
     private static string? GetProjectDirectory(AnalyzerOptions options)

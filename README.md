@@ -78,6 +78,28 @@ If neither file exists, you’ll see warning `RC000` with a sample DSL, and no i
 
 ---
 
+## 🛠 Command-line helper
+
+The repository includes a small console utility (`BlueDotBrigade.Analyzers.Tool`) that can scaffold the sample DSL configuration
+file the analyzer expects.
+
+Common usage examples:
+
+```bash
+# Print the XML to the console
+dotnet run --project Src/BlueDotBrigade.Analyzers.Tool -- generate-dsl --stdout
+
+# Write the XML to the default dsl.config.xml in the current directory
+dotnet run --project Src/BlueDotBrigade.Analyzers.Tool -- generate-dsl
+
+# Overwrite or place the DSL file in a custom location
+dotnet run --project Src/BlueDotBrigade.Analyzers.Tool -- generate-dsl --output ./config/dsl.config.xml --force
+```
+
+Once packaged as a .NET tool you can invoke it as `bdb-analyzers generate-dsl` and pass the same options.
+
+---
+
 ## 🥪 Testing
 
 Unit tests use MSTest and `Microsoft.CodeAnalysis.Testing` harness.
