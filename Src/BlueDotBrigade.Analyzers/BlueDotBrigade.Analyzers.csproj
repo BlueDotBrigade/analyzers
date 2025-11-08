@@ -16,6 +16,9 @@
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<DevelopmentDependency>true</DevelopmentDependency>
+
+		<!-- Analyzer projects should enforce extended analyzer rules -->
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 	</PropertyGroup>
 
 	<ItemGroup>
