@@ -12,7 +12,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 
-		<!-- Analyzer packaging: put the DLL under analyzers/dotnet/cs -->
+		<!-- Analyzer packaging: we disable default build output and explicitly include analyzer DLL below -->
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<DevelopmentDependency>true</DevelopmentDependency>
@@ -27,13 +27,23 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
 	</ItemGroup>
 
+	<!-- Analyzer configuration best-practice for solution-level + project-level DSL -->
 	<ItemGroup>
-	  <None Remove="bin\Debug\net9.0\BlueDotBrigade.Analyzers.dll" />
+		<!-- Allow overriding the DSL filename; expose to compiler via AnalyzerConfig -->
+		<CompilerVisibleProperty Include="AnalyzerDslFileName" />
+		<CompilerVisibleProperty Include="MSBuildProjectDirectory" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Place analyzer assembly in the correct nupkg folder -->
-		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<!-- Include solution-level DSL by default if present next to Directory.Build.props (or solution root). -->
+		<AdditionalFiles Include="$(SolutionDir)$(AnalyzerDslFileName)" Condition="Exists('$(SolutionDir)$(AnalyzerDslFileName)')" />
+		<!-- Include project-level DSL if present; project-level supersedes solution-level at analysis time. -->
+		<AdditionalFiles Include="$(MSBuildProjectDirectory)\$(AnalyzerDslFileName)" Condition="Exists('$(MSBuildProjectDirectory)\$(AnalyzerDslFileName)')" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Ensure the analyzer assembly is included in the nupkg under analyzers/dotnet/cs -->
+		<None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 	</ItemGroup>
 
 </Project>

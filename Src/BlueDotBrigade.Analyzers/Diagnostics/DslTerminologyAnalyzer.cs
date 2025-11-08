@@ -16,25 +16,10 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
     /// RC001 flags identifiers whose names contain a blocked term (from DSL XML),
     /// and suggests the preferred term where applicable.
     ///
-    /// XML schema (supported):
-    /// <dsl>
-    ///   <term prefer="Customer" block="Client" case="sensitive"/>
-    ///   <term prefer="Customer" case="sensitive">
-    ///     <alias block="Client"/>
-    ///     <alias block="Cust"/>
-    ///   </term>
-    /// </dsl>
-    ///
     /// Notes:
-    /// - If 'case' is omitted, behavior defaults to "sensitive".
-    /// - If no XML AdditionalFile is found, a default sample DSL (above) is synthesized and used.
-    /// - AdditionalFiles filename can be overridden by MSBuild property:
-    ///     build_property.AnalyzerDslFileName (default: "dsl.config.xml")
-    /// - Project-local file is preferred when MSBuildProjectDirectory is visible.
-    /// - Fallback: if MSBuildProjectDirectory is unavailable (e.g., analyzer config cannot be added in test
-    ///   harness), we attempt to infer the intended project directory from an AdditionalFile named ".editorconfig"
-    ///   by parsing 'build_property.MSBuildProjectDirectory = <value>'. This allows tests to supply the setting
-    ///   via AdditionalFiles when Solution.AddAnalyzerConfigDocument is missing.
+    /// - No default in-memory DSL is used. If no DSL file is found, the analyzer warns (RC000) and runs with no rules.
+    /// - DSL filename can be overridden by AnalyzerConfig/MSBuild: build_property.AnalyzerDslFileName (default: "dsl.config.xml").
+    /// - If multiple DSL files are present, the one under MSBuildProjectDirectory is preferred over solution-level.
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
@@ -52,29 +37,26 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
         </dsl>
         """;
 
-        private static readonly LocalizableString Title =
-            "Blocked term in identifier";
-
-        private static readonly LocalizableString MessageFormat =
-            // {0}=identifier, {1}=blocked, {2}=optional " Use 'preferred' instead."
-            "Identifier '{0}' contains blocked term '{1}'.{2}";
-
-        private static readonly LocalizableString Description =
-            "Identifiers should not contain blocked terms. Use the preferred term instead where applicable.";
-
-        private const string Category = "Naming";
-
         private static readonly DiagnosticDescriptor Rule = new(
             id: DiagnosticId,
-            title: Title,
-            messageFormat: MessageFormat,
-            category: Category,
+            title: "Blocked term in identifier",
+            messageFormat: "Identifier '{0}' contains blocked term '{1}'.{2}",
+            category: "Naming",
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: Description);
+            description: "Identifiers should not contain blocked terms. Use the preferred term instead where applicable.");
+
+        private static readonly DiagnosticDescriptor MissingConfigRule = new(
+            id: "RC000",
+            title: "DSL configuration not found",
+            messageFormat: "Expected DSL file '{0}' not found. Analyzer will run with empty rules. Example DSL:\n{1}",
+            category: "Configuration",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            description: "The analyzer did not find the DSL configuration file and will not flag any identifiers. Provide a DSL file to enable checks.");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-            => ImmutableArray.Create(Rule);
+            => ImmutableArray.Create(Rule, MissingConfigRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -83,15 +65,46 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
 
             context.RegisterCompilationStartAction(startCtx =>
             {
-                var rules = LoadRules(startCtx.Options);
-                if (rules.Count == 0)
+                var targetFileName = GetTargetFileName(startCtx.Options);
+                var projectDir = GetProjectDirectory(startCtx.Options);
+                var selected = SelectDslAdditionalText(startCtx.Options, targetFileName, projectDir);
+
+                var rules = new List<RuleDef>();
+                var hasConfig = false;
+
+                if (selected is not null)
                 {
-                    // No config found or empty; use built-in default DSL.
-                    rules = ParseDsl(XDocument.Parse(DefaultDslXml));
+                    var text = selected.GetText();
+                    if (text is not null)
+                    {
+                        try
+                        {
+                            var doc = XDocument.Parse(text.ToString());
+                            rules = ParseDsl(doc);
+                            hasConfig = true;
+                        }
+                        catch
+                        {
+                            // invalid XML => treat as missing
+                            hasConfig = false;
+                        }
+                    }
                 }
 
+                if (!hasConfig)
+                {
+                    startCtx.RegisterCompilationEndAction(endCtx =>
+                    {
+                        var diag = Diagnostic.Create(MissingConfigRule, Location.None, targetFileName, DefaultDslXml);
+                        endCtx.ReportDiagnostic(diag);
+                    });
+                }
+
+                // Symbols
                 startCtx.RegisterSymbolAction(symbolCtx =>
                 {
+                    if (rules.Count == 0) return;
+
                     var symbol = symbolCtx.Symbol;
                     if (string.IsNullOrEmpty(symbol.Name) || symbol.Locations.Length == 0)
                         return;
@@ -100,17 +113,14 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
 
                 }, SymbolKind.NamedType, SymbolKind.Method, SymbolKind.Field, SymbolKind.Property, SymbolKind.Parameter);
 
-                // Locals
+                // Locals (skip fields; handled by symbol action)
                 startCtx.RegisterSyntaxNodeAction(syntaxCtx =>
                 {
-                    var declarator = (VariableDeclaratorSyntax)syntaxCtx.Node;
+                    if (rules.Count == 0) return;
 
-                    // Skip fields (handled by symbol action)
-                    if (declarator.Parent is VariableDeclarationSyntax vd &&
-                        vd.Parent is FieldDeclarationSyntax)
-                    {
+                    var declarator = (VariableDeclaratorSyntax)syntaxCtx.Node;
+                    if (declarator.Parent is VariableDeclarationSyntax vd && vd.Parent is FieldDeclarationSyntax)
                         return;
-                    }
 
                     var name = declarator.Identifier.ValueText;
                     if (string.IsNullOrWhiteSpace(name))
@@ -120,6 +130,77 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
 
                 }, SyntaxKind.VariableDeclarator);
             });
+        }
+
+        private static string GetTargetFileName(AnalyzerOptions options)
+        {
+            options.AnalyzerConfigOptionsProvider.GlobalOptions
+                .TryGetValue("build_property.AnalyzerDslFileName", out var configuredName);
+            return string.IsNullOrWhiteSpace(configuredName) ? DefaultDslFileName : configuredName.Trim();
+        }
+
+        private static string? GetProjectDirectory(AnalyzerOptions options)
+        {
+            // Preferred: MSBuild-provided project directory from AnalyzerConfig
+            if (options.AnalyzerConfigOptionsProvider.GlobalOptions
+                .TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirRaw))
+            {
+                var normalized = Normalize(projectDirRaw);
+                if (!string.IsNullOrWhiteSpace(normalized))
+                    return normalized;
+            }
+
+            // Fallback for unit tests: allow specifying via an .editorconfig AdditionalFile
+            var editorConfig = options.AdditionalFiles
+                .FirstOrDefault(f => string.Equals(Path.GetFileName(f.Path), ".editorconfig", StringComparison.OrdinalIgnoreCase));
+
+            var text = editorConfig?.GetText();
+            if (text is not null)
+            {
+                foreach (var line in text.Lines)
+                {
+                    var s = line.ToString();
+                    if (s.Contains("build_property.MSBuildProjectDirectory", StringComparison.Ordinal))
+                    {
+                        var parts = s.Split('=');
+                        if (parts.Length == 2)
+                        {
+                            var candidate = Normalize(parts[1]);
+                            if (!string.IsNullOrWhiteSpace(candidate))
+                                return candidate;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static AdditionalText? SelectDslAdditionalText(AnalyzerOptions options, string targetFileName, string? projectDir)
+        {
+            var candidates = options.AdditionalFiles
+                .Where(f => string.Equals(Path.GetFileName(f.Path), targetFileName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (candidates.Count == 0)
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(projectDir))
+            {
+                var proj = candidates.FirstOrDefault(f => string.Equals(Normalize(Path.GetDirectoryName(f.Path)), projectDir, StringComparison.OrdinalIgnoreCase));
+                if (proj is not null)
+                    return proj; // project-level wins
+            }
+
+            // Otherwise return any (e.g., solution-level)
+            return candidates[0];
+        }
+
+        private static string? Normalize(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return path;
+            var p = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            return p.Trim();
         }
 
         private sealed record RuleDef(string Blocked, string Preferred, bool CaseSensitive);
@@ -139,107 +220,6 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
             }
         }
 
-        private static List<RuleDef> LoadRules(AnalyzerOptions options)
-        {
-            // Optional override for file name
-            options.AnalyzerConfigOptionsProvider.GlobalOptions
-                .TryGetValue("build_property.AnalyzerDslFileName", out var configuredName);
-            var targetFileName = string.IsNullOrWhiteSpace(configuredName) ? DefaultDslFileName : configuredName.Trim();
-
-            // Optional project directory (to prefer project-local file)
-            options.AnalyzerConfigOptionsProvider.GlobalOptions
-                .TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirRaw);
-            var projectDir = projectDirRaw?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-            // Fallback: attempt to parse .editorconfig from AdditionalFiles if property absent
-            if (string.IsNullOrEmpty(projectDir))
-            {
-                var editorConfig = options.AdditionalFiles.FirstOrDefault(f => string.Equals(Path.GetFileName(f.Path), ".editorconfig", StringComparison.OrdinalIgnoreCase));
-                if (editorConfig is not null)
-                {
-                    var text = editorConfig.GetText();
-                    if (text is not null)
-                    {
-                        foreach (var line in text.Lines)
-                        {
-                            var value = line.ToString();
-                            if (value.Contains("build_property.MSBuildProjectDirectory", StringComparison.Ordinal))
-                            {
-                                var parts = value.Split('=');
-                                if (parts.Length == 2)
-                                {
-                                    var candidate = parts[1].Trim();
-                                    if (!string.IsNullOrWhiteSpace(candidate))
-                                    {
-                                        projectDir = candidate.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Normalize separators so comparisons work with either '/' or '\\'
-            projectDir = NormalizePath(projectDir);
-
-            var candidates = options.AdditionalFiles
-                .Where(f => string.Equals(Path.GetFileName(f.Path), targetFileName, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            // If none found, return empty so caller injects default DSL
-            if (candidates.Count == 0)
-                return new();
-
-            AdditionalText chosen = candidates[0];
-            if (!string.IsNullOrEmpty(projectDir))
-            {
-                var projectLocal = candidates.FirstOrDefault(f =>
-                {
-                    var dir = NormalizePath(Path.GetDirectoryName(f.Path));
-                    return string.Equals(dir, projectDir, StringComparison.OrdinalIgnoreCase);
-                });
-                if (projectLocal is not null) chosen = projectLocal;
-            }
-            else if (candidates.Count > 1)
-            {
-                // Heuristic when project dir cannot be determined: prefer deepest path (most directory separators)
-                chosen = candidates
-                    .OrderByDescending(f => f.Path.Count(ch => ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar))
-                    .First();
-            }
-
-            var textChosen = chosen.GetText();
-            if (textChosen is null) return new();
-
-            try
-            {
-                var doc = XDocument.Parse(textChosen.ToString());
-                return ParseDsl(doc);
-            }
-            catch
-            {
-                return new();
-            }
-        }
-
-        private static string NormalizePath(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path)) return path;
-            var normalized = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            return normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        }
-
-        /// <summary>
-        /// Parse the v3 DSL:
-        /// - One-off: <term prefer="X" block="Y" case="sensitive|insensitive"/>
-        /// - One-to-many:
-        ///     <term prefer="X" case="..."><alias block="Y1"/><alias block="Y2"/></term>
-        /// Rules:
-        /// - If 'case' omitted on a term, default = sensitive.
-        /// - Child aliases inherit the 'case' from the parent term.
-        /// </summary>
         private static List<RuleDef> ParseDsl(XDocument doc)
         {
             var list = new List<RuleDef>();
@@ -256,20 +236,18 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
                 var caseAttr = (string)t.Attribute("case");
                 var caseSensitive = !string.Equals(caseAttr, "insensitive", StringComparison.OrdinalIgnoreCase); // default sensitive
 
-                // one-off attribute form
                 var blockedAttr = (string)t.Attribute("block");
                 if (!string.IsNullOrWhiteSpace(blockedAttr))
                 {
                     list.Add(new RuleDef(blockedAttr!, prefer, caseSensitive));
                 }
 
-                // child alias elements
                 foreach (var alias in t.Elements("alias"))
                 {
                     var blocked = (string)alias.Attribute("block");
                     if (!string.IsNullOrWhiteSpace(blocked))
                     {
-                        list.Add(new RuleDef(blocked!, prefer, caseSensitive)); // inherits parent's case
+                        list.Add(new RuleDef(blocked!, prefer, caseSensitive));
                     }
                 }
             }

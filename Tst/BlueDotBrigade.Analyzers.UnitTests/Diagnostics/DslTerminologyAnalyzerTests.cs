@@ -1,8 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using BlueDotBrigade.DatenLokator.TestTools;
-using BlueDotBrigade.DatenLokator.TestTools.Configuration;
-
 
 namespace BlueDotBrigade.Analyzers.Diagnostics
 {
@@ -17,97 +15,82 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
                 TestCode = new Daten().AsString("code-clean.cs")
             };
 
-            // DSL that doesn't block anything present in code
             var xml = new Daten().AsString("dsl-simple.xml");
-            test.TestState.AdditionalFiles.Add(("dsl.config.xml", xml)); // filename the analyzer looks for
-
+            // Project-level DSL (simulated) that does not block anything in code
+            test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", xml));
+            test.TestState.AdditionalFiles.Add(("/.editorconfig", "build_property.MSBuildProjectDirectory = src/TestProj"));
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task ReportsDiagnostics_For_Blocked_Terms_OneOff_And_Aliases()
+        public async Task ReportsDiagnostics_For_Blocked_Terms_ProjectLevel()
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
                 TestCode = new Daten().AsString("code-violations.cs"),
             };
 
-            var xml = new Daten().AsString("dsl-prefer-customer.xml"); // matches the new schema
-            test.TestState.AdditionalFiles.Add(("dsl.config.xml", xml));
+            // Project-level DSL blocks Client/Cust
+            var xmlProject = new Daten().AsString("dsl-prefer-customer.xml");
+            test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", xmlProject));
+            test.TestState.AdditionalFiles.Add(("/.editorconfig", "build_property.MSBuildProjectDirectory = src/TestProj"));
 
-            // Expect diagnostic on the field 'ClientValue'
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 21, 5, 32)); // ClientValue contains "Client"
+                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5,21,5,32)); // ClientValue contains Client
 
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task Uses_SolutionLevel_File_When_ProjectLevel_Missing()
+        public async Task Uses_SolutionLevel_When_ProjectLevel_Missing()
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
                 TestCode = new Daten().AsString("code-violations.cs"),
             };
 
+            // Only solution-level DSL provided
             var xmlSolution = new Daten().AsString("dsl-prefer-customer.xml");
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 21, 5, 32)); // ClientValue
+                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5,21,5,32));
 
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task ProjectLevel_Overrides_SolutionLevel_When_MSBuildProjectDirectory_Provided()
+        public async Task ProjectLevel_Overrides_SolutionLevel()
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
                 TestCode = new Daten().AsString("code-violations.cs"),
             };
 
-            // Project-level DSL that blocks nothing in the sample (only 'xyz')
+            // Project-level DSL that blocks nothing relevant
             var xmlProject = new Daten().AsString("dsl-simple.xml");
             test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", xmlProject));
+            test.TestState.AdditionalFiles.Add(("/.editorconfig", "build_property.MSBuildProjectDirectory = src/TestProj"));
 
-            // Solution-level DSL that would block 'Client'
+            // Solution-level DSL would block 'Client'
             var xmlSolution = new Daten().AsString("dsl-prefer-customer.xml");
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
-            // Provide MSBuildProjectDirectory via .editorconfig as an AdditionalFile (test harness cannot add analyzer configs)
-            test.TestState.AdditionalFiles.Add((
-                "/.editorconfig",
-                """
-                root = true
-
-                [*.cs]
-                build_property.MSBuildProjectDirectory = src/TestProj
-                """
-            ));
-
-            // Project-local DSL doesn't block 'Client', so no diagnostics expected
+            // Expect no diagnostics because project-level overrides
             await test.RunAsync();
         }
 
         [TestMethod]
-        public async Task Falls_Back_To_DefaultDsl_When_File_Missing()
+        public async Task Missing_Dsl_File_Reports_RC000_Only()
         {
-            var sourceCode = new Daten().AsString("code-violations.cs");
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = sourceCode,
+                TestCode = new Daten().AsString("code-violations.cs"),
             };
 
-            // Intentionally do NOT add any AdditionalFiles -> analyzer should synthesize default DSL
-            // Default DSL blocks "Client" and "Cust" in favor of "Customer" (and is case sensitive),
-            // plus the one-off also blocks "Client".
-
-            test.TestCode = new Daten().AsString("code-violations-defaultdsl.cs");
-
-            // Expected: the default DSL blocks "Client" (case-sensitive). Ensure identifier contains "Client".
+            // No DSL files -> expect only configuration warning RC000 (no RC001)
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 11, 5, 26)); // class ClientController
+                CSharpAnalyzerVerifier.Diagnostic("RC000"));
 
             await test.RunAsync();
         }

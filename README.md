@@ -8,7 +8,7 @@
 
 The analyzer scans identifiers (types, methods, fields, properties, and variables) for disallowed terms defined in a DSL configuration file and reports compile-time diagnostics when blocked words appear.
 
-If the DSL file isn’t found, a default example configuration is generated automatically.
+If the DSL file isn’t found, the analyzer reports a configuration warning and runs with an empty rule set (no identifiers are flagged). No files are written to disk by the analyzer.
 
 ---
 
@@ -29,10 +29,10 @@ If the DSL file isn’t found, a default example configuration is generated auto
 
 ### Rules
 
-* **`prefer`** — the preferred or canonical term
-* **`block`** — a forbidden or deprecated term
-* **`case`** — optional; defaults to `sensitive` (`insensitive` also supported)
-* **`alias`** — nested element for multiple blocked terms
+* `prefer` — the preferred or canonical term
+* `block` — a forbidden or deprecated term
+* `case` — optional; defaults to `sensitive` (`insensitive` also supported)
+* `alias` — nested element for multiple blocked terms
 
 ---
 
@@ -46,32 +46,44 @@ dotnet add package BlueDotBrigade.Analyzers
 
 ---
 
-## 📁 Configuration
+## 📁 Configuration (solution-level and project-level)
 
-Place your DSL file (e.g., `dsl.config.xml`) in the solution root or project directory.
+The analyzer supports a shared DSL and per-project overrides. By default, the expected filename is `dsl.config.xml`. You can change it by setting the `AnalyzerDslFileName` property.
 
-Then, expose it as an **AdditionalFile** in `Directory.Build.props`:
+Precedence:
+- Project-level DSL takes precedence over the solution-level DSL.
+
+How it is wired (best practice for .NET10 analyzers):
+- The analyzer package exposes two compiler-visible properties: `AnalyzerDslFileName` and `MSBuildProjectDirectory`.
+- The analyzer project configures `AdditionalFiles` so the compiler sees:
+ - `$(SolutionDir)$(AnalyzerDslFileName)` when it exists (shared/solution-level)
+ - `$(MSBuildProjectDirectory)\$(AnalyzerDslFileName)` when it exists (project-level)
+- The analyzer prefers the project-local file when both are present.
+
+To opt into a custom filename, define in your solution’s `Directory.Build.props`:
 
 ```xml
 <Project>
   <PropertyGroup>
     <AnalyzerDslFileName>dsl.config.xml</AnalyzerDslFileName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <CompilerVisibleProperty Include="AnalyzerDslFileName" />
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)$(AnalyzerDslFileName)" />
-  </ItemGroup>
 </Project>
 ```
 
-If no DSL file is found, the analyzer uses a built-in default example.
+Place your files accordingly:
+- Solution-level: `$(SolutionDir)/dsl.config.xml`
+- Project-level: `$(ProjectDir)/dsl.config.xml`
+
+If neither file exists, you’ll see warning `RC000` with a sample DSL, and no identifiers will be flagged.
 
 ---
 
 ## 🥪 Testing
 
-Unit tests use **MSTest v3+** and **BlueDotBrigade.DatenLokator** for sample input management.
+Unit tests use MSTest and `Microsoft.CodeAnalysis.Testing` harness.
+
+- Tests provide `AdditionalFiles` directly to simulate solution-level and project-level configurations.
+- The analyzer uses `MSBuildProjectDirectory` (exposed to the compiler) to prefer project-level when both are present.
 
 Run all tests with:
 
@@ -83,83 +95,11 @@ dotnet test
 
 ## 🔍 Requirements
 
-* .NET SDK **9.0+**
-* Visual Studio 2022 (v17.10+) or newer
-* Compatible with Roslyn-based tooling (e.g., JetBrains Rider)
+* .NET SDK10.0+
+* Visual Studio2022 (v17.10+) or newer
 
 ---
 
 ## 🧯 Overriding or Suppressing Rules
 
-Sometimes, specific code or legacy APIs should be excluded from analysis. Roslyn allows you to suppress or override diagnostics in several ways:
-
-### 1. Inline suppression using `#pragma`
-
-```csharp
-#pragma warning disable RC001
-public class ClientController
-{
-    // The term “Client” is blocked in the DSL, but it’s intentionally allowed here.
-    public void Run() { }
-}
-#pragma warning restore RC001
-```
-
-Use this for small code sections or one-off exceptions.
-
----
-
-### 2. Suppressing at symbol level with `[SuppressMessage]`
-
-```csharp
-using System.Diagnostics.CodeAnalysis;
-
-[SuppressMessage("Naming", "RC001:Blocked term in identifier", Justification = "Legacy API naming retained for compatibility.")]
-public class LegacyClientController
-{
-    public void DoWork() { }
-}
-```
-
-This approach is ideal when you want the suppression to be documented and scoped to a specific symbol.
-
----
-
-### 3. Configure globally using `.editorconfig`
-
-You can disable or change the severity of specific rules for all code under a directory:
-
-```ini
-# Disable the DSL analyzer rule entirely
-dotnet_diagnostic.RC001.severity = none
-
-# Or lower the severity
-# dotnet_diagnostic.RC001.severity = suggestion
-```
-
-Place this in your project’s or solution’s `.editorconfig` file.
-
----
-
-### 4. Ignoring Generated or Auto-Generated Code
-
-Roslyn analyzers automatically skip files marked as generated. If needed, you can mark your file manually:
-
-```csharp
-// <auto-generated />
-// This file is generated by a tool and should not trigger analyzer diagnostics.
-public class AutoGeneratedClient { }
-```
-
----
-
-### 5. Custom Suppression Comments *(Optional Feature)*
-
-If desired, you can extend the analyzer to recognize custom comments like:
-
-```csharp
-// AnalyzersIgnore RC001
-public class ClientController { }
-```
-
-This approach can be added to the analyzer logic for domain-specific suppressions if your team wants lightweight inline control.
+Same approaches as standard Roslyn analyzers: `#pragma`, `[SuppressMessage]`, and `.editorconfig` severity configuration.
