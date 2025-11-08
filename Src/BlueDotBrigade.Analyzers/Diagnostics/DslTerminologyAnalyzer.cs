@@ -13,18 +13,18 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
-/// RC001 flags identifiers whose names contain a blocked term (from DSL XML),
+/// BDB001 flags identifiers whose names contain a blocked term (from DSL XML),
 /// and suggests the preferred term where applicable.
 ///
 /// Notes:
-/// - No default in-memory DSL is used. If no DSL file is found, the analyzer warns (RC000) and runs with no rules.
+/// - No default in-memory DSL is used. If no DSL file is found, the analyzer warns (BDB000) and runs with no rules.
 /// - DSL filename can be overridden by AnalyzerConfig/MSBuild: build_property.AnalyzerDslFileName (default: "dsl.config.xml").
 /// - If multiple DSL files are present, the one under MSBuildProjectDirectory is preferred over solution-level.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
 {
-    public const string DiagnosticId = "RC001";
+    public const string DiagnosticId = "BDB001";
     private const string DefaultDslFileName = "dsl.config.xml";
 
     private static readonly string DefaultDslXml = """
@@ -47,7 +47,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
         description: "Identifiers should not contain blocked terms. Use the preferred term instead where applicable.");
 
     private static readonly DiagnosticDescriptor MissingConfigRule = new(
-        id: "RC000",
+        id: "BDB000",
         title: "DSL configuration not found",
         messageFormat: "Expected DSL file '{0}' not found. Analyzer will run with empty rules. Example DSL: {1}",
         category: "Configuration",

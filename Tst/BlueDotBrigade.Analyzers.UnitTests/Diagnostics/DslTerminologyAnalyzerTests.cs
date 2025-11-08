@@ -36,7 +36,7 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
             test.TestState.AdditionalFiles.Add(("/.editorconfig", "build_property.MSBuildProjectDirectory = src/TestProj"));
 
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5,21,5,32)); // ClientValue contains Client
+                CSharpAnalyzerVerifier.Diagnostic("BDB001").WithSpan(5,21,5,32)); // ClientValue contains Client
 
             await test.RunAsync();
         }
@@ -54,7 +54,7 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5,21,5,32));
+                CSharpAnalyzerVerifier.Diagnostic("BDB001").WithSpan(5,21,5,32));
 
             await test.RunAsync();
         }
@@ -81,16 +81,16 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
         }
 
         [TestMethod]
-        public async Task Missing_Dsl_File_Reports_RC000_Only()
+        public async Task Missing_Dsl_File_Reports_BDB000_Only()
         {
             var test = new CSharpAnalyzerVerifier.Test
             {
                 TestCode = new Daten().AsString("code-violations.cs"),
             };
 
-            // No DSL files -> expect only configuration warning RC000 (no RC001)
+            // No DSL files -> expect only configuration warning BDB000 (no BDB001)
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC000"));
+                CSharpAnalyzerVerifier.Diagnostic("BDB000"));
 
             await test.RunAsync();
         }
