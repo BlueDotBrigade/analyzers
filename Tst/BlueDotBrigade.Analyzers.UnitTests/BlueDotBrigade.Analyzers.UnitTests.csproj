@@ -4,17 +4,18 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<IsPackable>false</IsPackable>
+		<RootNamespace>BlueDotBrigade.Analyzers</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include=".Daten\Verifiers\DslTermAnalyzerTests\code-clean.cs" />
-	  <Compile Include=".Daten\Verifiers\DslTermAnalyzerTests\code-violations-defaultdsl.cs" />
-	  <Compile Include=".Daten\Verifiers\DslTermAnalyzerTests\code-violations.cs" />
+	  <Compile Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\code-clean.cs" />
+	  <Compile Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\code-violations-defaultdsl.cs" />
+	  <Compile Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\code-violations.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Content Include=".Daten\Verifiers\DslTermAnalyzerTests\dsl-prefer-customer.xml" />
-	  <Content Include=".Daten\Verifiers\DslTermAnalyzerTests\dsl-simple.xml" />
+	  <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-prefer-customer.xml" />
+	  <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-simple.xml" />
 	</ItemGroup>
 
 	<ItemGroup>

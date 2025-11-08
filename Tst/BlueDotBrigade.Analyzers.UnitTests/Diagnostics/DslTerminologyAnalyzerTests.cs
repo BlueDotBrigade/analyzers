@@ -1,21 +1,14 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
-using BlueDotBrigade.Analyzers.Tests.Verifiers;
 using BlueDotBrigade.DatenLokator.TestTools;
 using BlueDotBrigade.DatenLokator.TestTools.Configuration;
 
 
-namespace BlueDotBrigade.Analyzers.Tests
+namespace BlueDotBrigade.Analyzers.Diagnostics
 {
     [TestClass]
-    public class DslTermAnalyzerTests
+    public class DslTerminologyAnalyzerTests
     {
-        [AssemblyInitialize]
-        public static void AssemblyInit(TestContext _)
-        {
-            Lokator.Get().Setup();
-        }
-
         [TestMethod]
         public async Task NoDiagnostics_When_NoBlockedTerms()
         {

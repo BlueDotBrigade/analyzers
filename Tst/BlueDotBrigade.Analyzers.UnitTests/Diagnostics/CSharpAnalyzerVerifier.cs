@@ -2,13 +2,12 @@
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
-using BlueDotBrigade.Analyzers;
 
-namespace BlueDotBrigade.Analyzers.Tests.Verifiers
+namespace BlueDotBrigade.Analyzers.Diagnostics
 {
     internal static class CSharpAnalyzerVerifier
     {
-        public class Test : CSharpAnalyzerTest<DslTermAnalyzer, XUnitVerifier>
+        public class Test : CSharpAnalyzerTest<DslTerminologyAnalyzer, XUnitVerifier>
         {
             public Test()
             {

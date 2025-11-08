@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace BlueDotBrigade.Analyzers
+namespace BlueDotBrigade.Analyzers.Diagnostics
 {
     /// <summary>
     /// RC001 flags identifiers whose names contain a blocked term (from DSL XML),
@@ -37,7 +37,7 @@ namespace BlueDotBrigade.Analyzers
     ///   via AdditionalFiles when Solution.AddAnalyzerConfigDocument is missing.
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public sealed class DslTermAnalyzer : DiagnosticAnalyzer
+    public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "RC001";
         private const string DefaultDslFileName = "dsl.config.xml";
@@ -122,7 +122,7 @@ namespace BlueDotBrigade.Analyzers
             });
         }
 
-        private sealed record RuleDef(string Blocked, string? Preferred, bool CaseSensitive);
+        private sealed record RuleDef(string Blocked, string Preferred, bool CaseSensitive);
 
         private static void CheckAndReport(Action<Diagnostic> report, Location location, string identifierName, List<RuleDef> rules)
         {
@@ -224,7 +224,7 @@ namespace BlueDotBrigade.Analyzers
             }
         }
 
-        private static string? NormalizePath(string? path)
+        private static string NormalizePath(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) return path;
             var normalized = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
@@ -249,15 +249,15 @@ namespace BlueDotBrigade.Analyzers
 
             foreach (var t in root.Elements("term"))
             {
-                var prefer = (string?)t.Attribute("prefer");
+                var prefer = (string)t.Attribute("prefer");
                 if (string.IsNullOrWhiteSpace(prefer))
                     continue;
 
-                var caseAttr = (string?)t.Attribute("case");
+                var caseAttr = (string)t.Attribute("case");
                 var caseSensitive = !string.Equals(caseAttr, "insensitive", StringComparison.OrdinalIgnoreCase); // default sensitive
 
                 // one-off attribute form
-                var blockedAttr = (string?)t.Attribute("block");
+                var blockedAttr = (string)t.Attribute("block");
                 if (!string.IsNullOrWhiteSpace(blockedAttr))
                 {
                     list.Add(new RuleDef(blockedAttr!, prefer, caseSensitive));
@@ -266,7 +266,7 @@ namespace BlueDotBrigade.Analyzers
                 // child alias elements
                 foreach (var alias in t.Elements("alias"))
                 {
-                    var blocked = (string?)alias.Attribute("block");
+                    var blocked = (string)alias.Attribute("block");
                     if (!string.IsNullOrWhiteSpace(blocked))
                     {
                         list.Add(new RuleDef(blocked!, prefer, caseSensitive)); // inherits parent's case
