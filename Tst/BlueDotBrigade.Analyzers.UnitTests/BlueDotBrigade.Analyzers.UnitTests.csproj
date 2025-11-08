@@ -7,15 +7,27 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Include=".Daten\Verifiers\DslTermAnalyzerTests\code-clean.cs" />
+	  <Compile Include=".Daten\Verifiers\DslTermAnalyzerTests\code-violations-defaultdsl.cs" />
+	  <Compile Include=".Daten\Verifiers\DslTermAnalyzerTests\code-violations.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include=".Daten\Verifiers\DslTermAnalyzerTests\dsl-prefer-customer.xml" />
+	  <Content Include=".Daten\Verifiers\DslTermAnalyzerTests\dsl-simple.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\..\src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<!-- Roslyn analyzer testing + MSTest -->
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
-		<PackageReference Include="Microsoft.CodeAnalysis.Analyzer.Testing" Version="1.1.2" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.MSTest" Version="1.1.2" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzer.Testing" Version="1.0.4" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.MSTest" Version="1.0.4" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="1.0.4" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
 		<PackageReference Include="MSTest.TestFramework" Version="4.0.1" />
 		<PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
 

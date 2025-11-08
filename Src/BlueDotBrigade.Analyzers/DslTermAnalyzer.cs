@@ -31,6 +31,10 @@ namespace BlueDotBrigade.Analyzers
     /// - AdditionalFiles filename can be overridden by MSBuild property:
     ///     build_property.AnalyzerDslFileName (default: "dsl.config.xml")
     /// - Project-local file is preferred when MSBuildProjectDirectory is visible.
+    /// - Fallback: if MSBuildProjectDirectory is unavailable (e.g., analyzer config cannot be added in test
+    ///   harness), we attempt to infer the intended project directory from an AdditionalFile named ".editorconfig"
+    ///   by parsing 'build_property.MSBuildProjectDirectory = <value>'. This allows tests to supply the setting
+    ///   via AdditionalFiles when Solution.AddAnalyzerConfigDocument is missing.
     /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DslTermAnalyzer : DiagnosticAnalyzer
@@ -147,6 +151,39 @@ namespace BlueDotBrigade.Analyzers
                 .TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirRaw);
             var projectDir = projectDirRaw?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
+            // Fallback: attempt to parse .editorconfig from AdditionalFiles if property absent
+            if (string.IsNullOrEmpty(projectDir))
+            {
+                var editorConfig = options.AdditionalFiles.FirstOrDefault(f => string.Equals(Path.GetFileName(f.Path), ".editorconfig", StringComparison.OrdinalIgnoreCase));
+                if (editorConfig is not null)
+                {
+                    var text = editorConfig.GetText();
+                    if (text is not null)
+                    {
+                        foreach (var line in text.Lines)
+                        {
+                            var value = line.ToString();
+                            if (value.Contains("build_property.MSBuildProjectDirectory", StringComparison.Ordinal))
+                            {
+                                var parts = value.Split('=');
+                                if (parts.Length == 2)
+                                {
+                                    var candidate = parts[1].Trim();
+                                    if (!string.IsNullOrWhiteSpace(candidate))
+                                    {
+                                        projectDir = candidate.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Normalize separators so comparisons work with either '/' or '\\'
+            projectDir = NormalizePath(projectDir);
+
             var candidates = options.AdditionalFiles
                 .Where(f => string.Equals(Path.GetFileName(f.Path), targetFileName, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -160,24 +197,38 @@ namespace BlueDotBrigade.Analyzers
             {
                 var projectLocal = candidates.FirstOrDefault(f =>
                 {
-                    var dir = Path.GetDirectoryName(f.Path)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    var dir = NormalizePath(Path.GetDirectoryName(f.Path));
                     return string.Equals(dir, projectDir, StringComparison.OrdinalIgnoreCase);
                 });
                 if (projectLocal is not null) chosen = projectLocal;
             }
+            else if (candidates.Count > 1)
+            {
+                // Heuristic when project dir cannot be determined: prefer deepest path (most directory separators)
+                chosen = candidates
+                    .OrderByDescending(f => f.Path.Count(ch => ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar))
+                    .First();
+            }
 
-            var text = chosen.GetText();
-            if (text is null) return new();
+            var textChosen = chosen.GetText();
+            if (textChosen is null) return new();
 
             try
             {
-                var doc = XDocument.Parse(text.ToString());
+                var doc = XDocument.Parse(textChosen.ToString());
                 return ParseDsl(doc);
             }
             catch
             {
                 return new();
             }
+        }
+
+        private static string? NormalizePath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return path;
+            var normalized = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            return normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
         /// <summary>

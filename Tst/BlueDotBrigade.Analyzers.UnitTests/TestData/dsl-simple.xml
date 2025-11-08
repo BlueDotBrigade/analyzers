@@ -1,5 +1,0 @@
-<dsl>
-  <term prefer="Customer" case="sensitive">
-    <alias block="xyz"/>
-  </term>
-</dsl>

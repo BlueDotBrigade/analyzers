@@ -8,7 +8,7 @@ namespace BlueDotBrigade.Analyzers.Tests.Verifiers
 {
     internal static class CSharpAnalyzerVerifier
     {
-        public class Test : CSharpAnalyzerTest<DslTermAnalyzer, MSTestVerifier>
+        public class Test : CSharpAnalyzerTest<DslTermAnalyzer, XUnitVerifier>
         {
             public Test()
             {

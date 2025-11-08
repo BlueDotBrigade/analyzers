@@ -2,11 +2,11 @@ namespace Demo
 {
     class OrderService
     {
-        private int tempValue;
+        private int ClientValue;
 
         public void DoWork(int orderId)
         {
-            int localTemp = 0;
+            int localCount = 0;
         }
     }
 }

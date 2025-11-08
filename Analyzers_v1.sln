@@ -1,11 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36623.8
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11201.2 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers", "Src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj", "{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers.UnitTests", "Tst\BlueDotBrigade.Analyzers.UnitTests\BlueDotBrigade.Analyzers.UnitTests.csproj", "{FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B57D98F-4C5A-458D-ABA1-CDF0DD1998CB}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

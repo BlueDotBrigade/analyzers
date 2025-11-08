@@ -42,9 +42,9 @@ namespace BlueDotBrigade.Analyzers.Tests
             var xml = new Daten().AsString("dsl-prefer-customer.xml"); // matches the new schema
             test.TestState.AdditionalFiles.Add(("dsl.config.xml", xml));
 
-            // code-violations.cs includes a leading blank line to stabilize spans
+            // Expect diagnostic on the field 'ClientValue'
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(6, 21, 6, 30)); // tempValue contains "temp"
+                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 21, 5, 32)); // ClientValue contains "Client"
 
             await test.RunAsync();
         }
@@ -61,7 +61,7 @@ namespace BlueDotBrigade.Analyzers.Tests
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
             test.ExpectedDiagnostics.Add(
-                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(6, 21, 6, 30)); // tempValue
+                CSharpAnalyzerVerifier.Diagnostic("RC001").WithSpan(5, 21, 5, 32)); // ClientValue
 
             await test.RunAsync();
         }
@@ -78,12 +78,12 @@ namespace BlueDotBrigade.Analyzers.Tests
             var xmlProject = new Daten().AsString("dsl-simple.xml");
             test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", xmlProject));
 
-            // Solution-level DSL that would block 'temp'
+            // Solution-level DSL that would block 'Client'
             var xmlSolution = new Daten().AsString("dsl-prefer-customer.xml");
             test.TestState.AdditionalFiles.Add(("SolutionRoot/dsl.config.xml", xmlSolution));
 
-            // Tell analyzer that project dir == src/TestProj so it prefers that file
-            test.TestState.AnalyzerConfigFiles.Add((
+            // Provide MSBuildProjectDirectory via .editorconfig as an AdditionalFile (test harness cannot add analyzer configs)
+            test.TestState.AdditionalFiles.Add((
                 "/.editorconfig",
                 """
                 root = true
@@ -93,16 +93,17 @@ namespace BlueDotBrigade.Analyzers.Tests
                 """
             ));
 
-            // Project-local DSL doesn't block 'temp', so no diagnostics expected
+            // Project-local DSL doesn't block 'Client', so no diagnostics expected
             await test.RunAsync();
         }
 
         [TestMethod]
         public async Task Falls_Back_To_DefaultDsl_When_File_Missing()
         {
+            var sourceCode = new Daten().AsString("code-violations.cs");
             var test = new CSharpAnalyzerVerifier.Test
             {
-                TestCode = new Daten().AsString("code-violations.cs"),
+                TestCode = sourceCode,
             };
 
             // Intentionally do NOT add any AdditionalFiles -> analyzer should synthesize default DSL
