@@ -1,0 +1,1 @@
+<dsl><term prefer="Customer" case="sensitive"><alias block="Client" /><alias block="Cust" /></term></dsl>

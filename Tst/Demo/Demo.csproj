@@ -5,13 +5,20 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Explicitly set custom DSL filename -->
+    <AnalyzerDslFileName>demo.dsl.xml</AnalyzerDslFileName>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Treat the analyzer project as an Analyzer, not a normal assembly reference -->
+    <!-- Analyzer project reference -->
     <ProjectReference Include="..\..\Src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Provide DSL to analyzer -->
+    <AdditionalFiles Include="demo.dsl.xml" />
   </ItemGroup>
 
 </Project>
