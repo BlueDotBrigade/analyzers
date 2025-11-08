@@ -13,10 +13,11 @@
 	  <Compile Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\code-violations.cs" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-prefer-customer.xml" />
-	  <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-simple.xml" />
-	</ItemGroup>
+        <ItemGroup>
+          <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-prefer-customer.xml" />
+          <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-prefer-customer-block-cust.xml" />
+          <Content Include=".Daten\Diagnostics\DslTerminologyAnalyzerTests\dsl-simple.xml" />
+        </ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj" />

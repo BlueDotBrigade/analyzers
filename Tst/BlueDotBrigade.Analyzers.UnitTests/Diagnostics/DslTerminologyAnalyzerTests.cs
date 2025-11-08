@@ -7,13 +7,6 @@ namespace BlueDotBrigade.Analyzers.Diagnostics
     [TestClass]
     public class DslTerminologyAnalyzerTests
     {
-        private const string DslPreferCustomerBlockCust = """
-<?xml version="1.0" encoding="utf-8"?>
-<dsl>
-  <term prefer="Customer" block="Cust" case="sensitive" />
-</dsl>
-""";
-
         [TestMethod]
         public async Task NoDiagnostics_When_NoBlockedTerms()
         {
@@ -311,7 +304,9 @@ public class Example
                 TestCode = code,
             };
 
-            test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", DslPreferCustomerBlockCust));
+            var xml = new Daten().AsString("dsl-prefer-customer-block-cust.xml");
+
+            test.TestState.AdditionalFiles.Add(("src/TestProj/dsl.config.xml", xml));
             test.TestState.AdditionalFiles.Add(("/.editorconfig", "build_property.MSBuildProjectDirectory = src/TestProj"));
 
             return test;
