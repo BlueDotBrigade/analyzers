@@ -1,4 +1,4 @@
-# This workflow will build a .NET project
+# This workflow will build and test the UnitTests project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
 name: .NET
@@ -17,13 +17,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install .NET Core workload
+
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+        include-prerelease: true
+
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Tst/BlueDotBrigade.Analyzers.UnitTests/BlueDotBrigade.Analyzers.UnitTests.csproj
+
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build Tst/BlueDotBrigade.Analyzers.UnitTests/BlueDotBrigade.Analyzers.UnitTests.csproj --no-restore --configuration Release
+
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test Tst/BlueDotBrigade.Analyzers.UnitTests/BlueDotBrigade.Analyzers.UnitTests.csproj --no-build --configuration Release --verbosity normal
