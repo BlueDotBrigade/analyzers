@@ -5,6 +5,8 @@ VisualStudioVersion = 18.0.11201.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers", "Src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj", "{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers.Tool", "Src\BlueDotBrigade.Analyzers.Tool\BlueDotBrigade.Analyzers.Tool.csproj", "{DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers.UnitTests", "Tst\BlueDotBrigade.Analyzers.UnitTests\BlueDotBrigade.Analyzers.UnitTests.csproj", "{FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B57D98F-4C5A-458D-ABA1-CDF0DD1998CB}"
@@ -25,8 +27,12 @@ Global
 		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Release|Any CPU.Build.0 = Release|Any CPU
+                {DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Release|Any CPU.Build.0 = Release|Any CPU
+                {FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC79CD7C-4F1E-468D-ADF2-3D46DE057B1C}.Release|Any CPU.Build.0 = Release|Any CPU
