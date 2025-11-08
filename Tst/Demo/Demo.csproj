@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <!-- Treat the analyzer project as an Analyzer, not a normal assembly reference -->
-    <ProjectReference Include="..\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj"
+    <ProjectReference Include="..\..\Src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>

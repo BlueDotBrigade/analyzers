@@ -10,10 +10,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B57D98F-4C5A-458D-ABA1-CDF0DD1998CB}"
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
+		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers.DemoCli", "src\BlueDotBrigade.Analyzers.DemoCli\BlueDotBrigade.Analyzers.DemoCli.csproj", "{E7F663A0-2D97-4F86-8FE2-3154D0F88CAF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Tst\Demo\Demo.csproj", "{E7F663A0-2D97-4F86-8FE2-3154D0F88CAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
