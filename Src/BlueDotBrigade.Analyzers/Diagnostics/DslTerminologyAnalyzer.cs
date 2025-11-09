@@ -178,9 +178,25 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
 
         if (!string.IsNullOrWhiteSpace(projectDir))
         {
-            var proj = candidates.FirstOrDefault(f => string.Equals(Normalize(Path.GetDirectoryName(f.Path)), projectDir, StringComparison.OrdinalIgnoreCase));
-            if (proj is not null)
-                return proj; // project-level wins
+            var normalizedProjectDir = Normalize(projectDir);
+            if (!string.IsNullOrWhiteSpace(normalizedProjectDir))
+            {
+                var proj = candidates.FirstOrDefault(f =>
+                {
+                    var candidateDir = Normalize(Path.GetDirectoryName(f.Path));
+                    if (string.IsNullOrWhiteSpace(candidateDir))
+                        return false;
+
+                    if (string.Equals(candidateDir, normalizedProjectDir, StringComparison.OrdinalIgnoreCase))
+                        return true;
+
+                    var expectedSuffix = Path.DirectorySeparatorChar + normalizedProjectDir;
+                    return candidateDir.EndsWith(expectedSuffix, StringComparison.OrdinalIgnoreCase);
+                });
+
+                if (proj is not null)
+                    return proj; // project-level wins
+            }
         }
 
         // Otherwise return any (e.g., solution-level)
@@ -191,7 +207,8 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
     {
         if (string.IsNullOrWhiteSpace(path)) return path;
         var p = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-        return p.Trim();
+        var trimmed = p.Trim();
+        return Path.TrimEndingDirectorySeparator(trimmed);
     }
 
     private sealed record RuleDef(string Blocked, string Preferred, bool CaseSensitive);
