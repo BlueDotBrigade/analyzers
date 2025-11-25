@@ -3,13 +3,17 @@ namespace Demo
     // Should NOT trigger analyzer (uses preferred term Customer only)
     internal class CustomerProfile
     {
-        private int customerValue;
+        private int customerGroup = 1000;
 
-        public int CustomerValue { get; set; }
+        public int CustomerId { get; set; }
+
+        // property with blocked term 'Client'
+        public int PreferredCustomerId { get; set; }
+
         public void GetCustomerValue()
         {
-            var customerCount = 0;
-            _ = customerCount + customerValue + CustomerValue;
+            var customerTemp = 0;
+            _ = customerTemp + customerGroup + CustomerId;
         }
     }
 }

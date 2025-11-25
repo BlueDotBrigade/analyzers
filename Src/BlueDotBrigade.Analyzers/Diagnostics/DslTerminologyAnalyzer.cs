@@ -100,6 +100,12 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
                 if (string.IsNullOrEmpty(symbol.Name) || symbol.Locations.Length == 0)
                     return;
 
+                // Avoid duplicate diagnostics for properties: skip accessor methods.
+                if (symbol is IMethodSymbol m && (m.MethodKind == MethodKind.PropertyGet || m.MethodKind == MethodKind.PropertySet))
+                {
+                    return;
+                }
+
                 CheckAndReport(symbolCtx.ReportDiagnostic, symbol.Locations[0], symbol.Name, rules);
 
             }, SymbolKind.NamedType, SymbolKind.Method, SymbolKind.Field, SymbolKind.Property, SymbolKind.Parameter);
@@ -218,9 +224,33 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
         foreach (var r in rules)
         {
             var comparison = r.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-            if (identifierName.IndexOf(r.Blocked, comparison) >= 0)
+
+            // Fast-path: if the identifier is exactly the preferred term, do not report
+            if (!string.IsNullOrEmpty(r.Preferred) && string.Equals(identifierName, r.Preferred, comparison))
             {
-                var suffix = r.Preferred is null ? string.Empty : $" Use '{r.Preferred}' instead.";
+                continue;
+            }
+
+            var searchStart = 0;
+            while (true)
+            {
+                var idx = identifierName.IndexOf(r.Blocked, searchStart, comparison);
+                if (idx < 0)
+                {
+                    break;
+                }
+
+                // If this blocked occurrence aligns with the preferred term at the same position,
+                // treat it as allowed (e.g., "Customer" contains "Cust" at index 0 but is preferred)
+                if (!string.IsNullOrEmpty(r.Preferred)
+                    && idx + r.Preferred.Length <= identifierName.Length
+                    && identifierName.IndexOf(r.Preferred, idx, comparison) == idx)
+                {
+                    searchStart = idx + 1; // continue searching for other blocked occurrences
+                    continue;
+                }
+
+                var suffix = r.Preferred is null ? string.Empty : $" Instead, use: '{r.Preferred}'";
                 var diag = Diagnostic.Create(Rule, location, identifierName, r.Blocked, suffix);
                 report(diag);
                 return; // one diagnostic per identifier
