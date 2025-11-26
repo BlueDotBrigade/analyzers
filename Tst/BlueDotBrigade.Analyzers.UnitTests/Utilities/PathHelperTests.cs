@@ -63,6 +63,14 @@ namespace BlueDotBrigade.Analyzers.Utilities
         }
 
         [TestMethod]
+        public void TrimEndingDirectorySeparator_ReturnsNull_WhenInputIsNull()
+        {
+            var result = PathHelper.TrimEndingDirectorySeparator(null);
+
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
         public void TrimEndingDirectorySeparator_ReturnsEmptyString_WhenInputIsEmpty()
         {
             var result = PathHelper.TrimEndingDirectorySeparator(string.Empty);

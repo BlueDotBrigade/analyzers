@@ -40,7 +40,7 @@ internal static class PathHelper
     /// Removes trailing directory separator characters from a path, unless the path
     /// represents a root directory (e.g., "C:\" on Windows or "/" on Unix).
     /// </summary>
-    /// <param name="path">The path from which to remove trailing separators.</param>
+    /// <param name="path">The path from which to remove trailing separators. May be null or empty.</param>
     /// <returns>
     /// The path with trailing directory separators removed, or the original path
     /// if it represents a root directory or is null/empty.
@@ -49,7 +49,7 @@ internal static class PathHelper
     /// This method is compatible with .NET Standard 2.0 which does not have
     /// <c>Path.TrimEndingDirectorySeparator</c>.
     /// </remarks>
-    public static string TrimEndingDirectorySeparator(string path)
+    public static string? TrimEndingDirectorySeparator(string? path)
     {
         if (string.IsNullOrEmpty(path))
         {
