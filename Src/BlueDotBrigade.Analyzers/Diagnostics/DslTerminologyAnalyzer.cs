@@ -157,7 +157,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
             foreach (var line in text.Lines)
             {
                 var s = line.ToString();
-                if (s.Contains("build_property.MSBuildProjectDirectory", StringComparison.Ordinal))
+                if (s.IndexOf("build_property.MSBuildProjectDirectory", StringComparison.Ordinal) >= 0)
                 {
                     var parts = s.Split('=');
                     if (parts.Length == 2)
@@ -214,10 +214,37 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
         if (string.IsNullOrWhiteSpace(path)) return path;
         var p = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
         var trimmed = p.Trim();
-        return Path.TrimEndingDirectorySeparator(trimmed);
+        return TrimEndingDirectorySeparatorCompat(trimmed);
     }
 
-    private sealed record RuleDef(string Blocked, string Preferred, bool CaseSensitive);
+    private static string TrimEndingDirectorySeparatorCompat(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+
+        var root = Path.GetPathRoot(path);
+        var result = path;
+        while (result.Length > 0 && IsDirectorySeparator(result[result.Length - 1]) && !string.Equals(result, root, StringComparison.Ordinal))
+        {
+            result = result.Substring(0, result.Length - 1);
+        }
+        return result;
+    }
+
+    private static bool IsDirectorySeparator(char c) => c == Path.DirectorySeparatorChar || c == Path.AltDirectorySeparatorChar;
+
+    private sealed class RuleDef
+    {
+        public string Blocked { get; }
+        public string Preferred { get; }
+        public bool CaseSensitive { get; }
+
+        public RuleDef(string blocked, string preferred, bool caseSensitive)
+        {
+            Blocked = blocked;
+            Preferred = preferred;
+            CaseSensitive = caseSensitive;
+        }
+    }
 
     private static void CheckAndReport(Action<Diagnostic> report, Location location, string identifierName, List<RuleDef> rules)
     {
