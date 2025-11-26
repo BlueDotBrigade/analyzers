@@ -3,11 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
 using System.Xml.Linq;
 
 using BlueDotBrigade.Analyzers.Dsl;
+using BlueDotBrigade.Analyzers.Utilities;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -56,9 +55,9 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(startCtx =>
         {
-            var targetFileName = GetTargetFileName(startCtx.Options);
-            var projectDir = GetProjectDirectory(startCtx.Options);
-            var selected = SelectDslAdditionalText(startCtx.Options, targetFileName, projectDir);
+            var targetFileName = AnalyzerOptionsHelper.GetTargetFileName(startCtx.Options);
+            var projectDir = AnalyzerOptionsHelper.GetProjectDirectory(startCtx.Options);
+            var selected = AnalyzerOptionsHelper.SelectDslAdditionalText(startCtx.Options, targetFileName, projectDir);
 
             var rules = new List<RuleDef>();
             var hasConfig = false;
@@ -128,109 +127,6 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
             }, SyntaxKind.VariableDeclarator);
         });
     }
-
-    private static string GetTargetFileName(AnalyzerOptions options)
-    {
-        options.AnalyzerConfigOptionsProvider.GlobalOptions
-            .TryGetValue("build_property.AnalyzerDslFileName", out var configuredName);
-        return string.IsNullOrWhiteSpace(configuredName) ? DslDefaults.DefaultDslFileName : configuredName.Trim();
-    }
-
-    private static string? GetProjectDirectory(AnalyzerOptions options)
-    {
-        // Preferred: MSBuild-provided project directory from AnalyzerConfig
-        if (options.AnalyzerConfigOptionsProvider.GlobalOptions
-            .TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirRaw))
-        {
-            var normalized = Normalize(projectDirRaw);
-            if (!string.IsNullOrWhiteSpace(normalized))
-                return normalized;
-        }
-
-        // Fallback for unit tests: allow specifying via an .editorconfig AdditionalFile
-        var editorConfig = options.AdditionalFiles
-            .FirstOrDefault(f => string.Equals(Path.GetFileName(f.Path), ".editorconfig", StringComparison.OrdinalIgnoreCase));
-
-        var text = editorConfig?.GetText();
-        if (text is not null)
-        {
-            foreach (var line in text.Lines)
-            {
-                var s = line.ToString();
-                if (s.IndexOf("build_property.MSBuildProjectDirectory", StringComparison.Ordinal) >= 0)
-                {
-                    var parts = s.Split('=');
-                    if (parts.Length == 2)
-                    {
-                        var candidate = Normalize(parts[1]);
-                        if (!string.IsNullOrWhiteSpace(candidate))
-                            return candidate;
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static AdditionalText? SelectDslAdditionalText(AnalyzerOptions options, string targetFileName, string? projectDir)
-    {
-        var candidates = options.AdditionalFiles
-            .Where(f => string.Equals(Path.GetFileName(f.Path), targetFileName, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (candidates.Count == 0)
-            return null;
-
-        if (!string.IsNullOrWhiteSpace(projectDir))
-        {
-            var normalizedProjectDir = Normalize(projectDir);
-            if (!string.IsNullOrWhiteSpace(normalizedProjectDir))
-            {
-                var proj = candidates.FirstOrDefault(f =>
-                {
-                    var candidateDir = Normalize(Path.GetDirectoryName(f.Path));
-                    if (string.IsNullOrWhiteSpace(candidateDir))
-                        return false;
-
-                    if (string.Equals(candidateDir, normalizedProjectDir, StringComparison.OrdinalIgnoreCase))
-                        return true;
-
-                    var expectedSuffix = Path.DirectorySeparatorChar + normalizedProjectDir;
-                    return candidateDir.EndsWith(expectedSuffix, StringComparison.OrdinalIgnoreCase);
-                });
-
-                if (proj is not null)
-                    return proj; // project-level wins
-            }
-        }
-
-        // Otherwise return any (e.g., solution-level)
-        return candidates[0];
-    }
-
-    private static string? Normalize(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path)) return path;
-        var p = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-        var trimmed = p.Trim();
-        return TrimEndingDirectorySeparatorCompat(trimmed);
-    }
-
-    private static string TrimEndingDirectorySeparatorCompat(string path)
-    {
-        if (string.IsNullOrEmpty(path)) return path;
-
-        var root = Path.GetPathRoot(path);
-        var result = path;
-        while (result.Length > 0 && IsDirectorySeparator(result[result.Length - 1]) && !string.Equals(result, root, StringComparison.Ordinal))
-        {
-            result = result.Substring(0, result.Length - 1);
-        }
-        return result;
-    }
-
-    private static bool IsDirectorySeparator(char c) => c == Path.DirectorySeparatorChar || c == Path.AltDirectorySeparatorChar;
 
     private sealed class RuleDef
     {

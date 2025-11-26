@@ -22,6 +22,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<!-- Expose internals to unit tests -->
+		<InternalsVisibleTo Include="BlueDotBrigade.Analyzers.UnitTests" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Compile Remove="bin\**" />
 	  <EmbeddedResource Remove="bin\**" />
 	  <None Remove="bin\**" />
