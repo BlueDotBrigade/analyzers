@@ -20,7 +20,7 @@
         </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj" />
+		<ProjectReference Include="..\..\Src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
