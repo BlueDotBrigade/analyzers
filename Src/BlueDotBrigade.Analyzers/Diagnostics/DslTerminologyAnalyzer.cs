@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Xml.Linq;
 
 using BlueDotBrigade.Analyzers.Dsl;
 using BlueDotBrigade.Analyzers.Utilities;
@@ -59,7 +58,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
             var projectDir = AnalyzerOptionsHelper.GetProjectDirectory(startCtx.Options);
             var selected = AnalyzerOptionsHelper.SelectDslAdditionalText(startCtx.Options, targetFileName, projectDir);
 
-            var rules = new List<RuleDef>();
+            var rules = new List<TerminologyRule>();
             var hasConfig = false;
 
             if (selected is not null)
@@ -69,8 +68,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
                 {
                     try
                     {
-                        var doc = XDocument.Parse(text.ToString());
-                        rules = ParseDsl(doc);
+                        rules = DslRuleParser.Parse(text.ToString());
                         hasConfig = true;
                     }
                     catch
@@ -90,6 +88,8 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
                 });
             }
 
+            var validator = new TerminologyValidator(rules);
+
             // Symbols
             startCtx.RegisterSymbolAction(symbolCtx =>
             {
@@ -105,7 +105,7 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                CheckAndReport(symbolCtx.ReportDiagnostic, symbol.Locations[0], symbol.Name, rules);
+                ReportIfViolation(symbolCtx.ReportDiagnostic, symbol.Locations[0], symbol.Name, validator);
 
             }, SymbolKind.NamedType, SymbolKind.Method, SymbolKind.Field, SymbolKind.Property, SymbolKind.Parameter);
 
@@ -122,97 +122,20 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
                 if (string.IsNullOrWhiteSpace(name))
                     return;
 
-                CheckAndReport(syntaxCtx.ReportDiagnostic, declarator.Identifier.GetLocation(), name, rules);
+                ReportIfViolation(syntaxCtx.ReportDiagnostic, declarator.Identifier.GetLocation(), name, validator);
 
             }, SyntaxKind.VariableDeclarator);
         });
     }
 
-    private sealed class RuleDef
+    private static void ReportIfViolation(Action<Diagnostic> report, Location location, string identifierName, TerminologyValidator validator)
     {
-        public string Blocked { get; }
-        public string Preferred { get; }
-        public bool CaseSensitive { get; }
-
-        public RuleDef(string blocked, string preferred, bool caseSensitive)
+        var violatedRule = validator.GetViolation(identifierName);
+        if (violatedRule is not null)
         {
-            Blocked = blocked;
-            Preferred = preferred;
-            CaseSensitive = caseSensitive;
+            var suffix = violatedRule.Preferred is null ? string.Empty : $" Instead, use: '{violatedRule.Preferred}'";
+            var diag = Diagnostic.Create(Rule, location, identifierName, violatedRule.Blocked, suffix);
+            report(diag);
         }
-    }
-
-    private static void CheckAndReport(Action<Diagnostic> report, Location location, string identifierName, List<RuleDef> rules)
-    {
-        foreach (var r in rules)
-        {
-            var comparison = r.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-
-            // Fast-path: if the identifier is exactly the preferred term, do not report
-            if (!string.IsNullOrEmpty(r.Preferred) && string.Equals(identifierName, r.Preferred, comparison))
-            {
-                continue;
-            }
-
-            var searchStart = 0;
-            while (true)
-            {
-                var idx = identifierName.IndexOf(r.Blocked, searchStart, comparison);
-                if (idx < 0)
-                {
-                    break;
-                }
-
-                // If this blocked occurrence aligns with the preferred term at the same position,
-                // treat it as allowed (e.g., "Customer" contains "Cust" at index 0 but is preferred)
-                if (!string.IsNullOrEmpty(r.Preferred)
-                    && idx + r.Preferred.Length <= identifierName.Length
-                    && identifierName.IndexOf(r.Preferred, idx, comparison) == idx)
-                {
-                    searchStart = idx + 1; // continue searching for other blocked occurrences
-                    continue;
-                }
-
-                var suffix = r.Preferred is null ? string.Empty : $" Instead, use: '{r.Preferred}'";
-                var diag = Diagnostic.Create(Rule, location, identifierName, r.Blocked, suffix);
-                report(diag);
-                return; // one diagnostic per identifier
-            }
-        }
-    }
-
-    private static List<RuleDef> ParseDsl(XDocument doc)
-    {
-        var list = new List<RuleDef>();
-        var root = doc.Root;
-        if (root is null || !string.Equals(root.Name.LocalName, "dsl", StringComparison.OrdinalIgnoreCase))
-            return list;
-
-        foreach (var t in root.Elements("term"))
-        {
-            var prefer = (string)t.Attribute("prefer");
-            if (string.IsNullOrWhiteSpace(prefer))
-                continue;
-
-            var caseAttr = (string)t.Attribute("case");
-            var caseSensitive = !string.Equals(caseAttr, "insensitive", StringComparison.OrdinalIgnoreCase); // default sensitive
-
-            var blockedAttr = (string)t.Attribute("block");
-            if (!string.IsNullOrWhiteSpace(blockedAttr))
-            {
-                list.Add(new RuleDef(blockedAttr!, prefer, caseSensitive));
-            }
-
-            foreach (var alias in t.Elements("alias"))
-            {
-                var blocked = (string)alias.Attribute("block");
-                if (!string.IsNullOrWhiteSpace(blocked))
-                {
-                    list.Add(new RuleDef(blocked!, prefer, caseSensitive));
-                }
-            }
-        }
-
-        return list;
     }
 }
