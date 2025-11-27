@@ -524,10 +524,11 @@ namespace BlueDotBrigade.Analyzers.Dsl
         [TestMethod]
         public void GetViolation_ReturnsRule_When_UnderscorePrefixedField_ContainsBlockedTerm()
         {
-            // Note: The analyzer currently checks the entire identifier name.
-            // Underscore-prefixed fields like "_custValue" still contain "Cust" and will be flagged.
-            // This test validates current behavior - if ignoring underscore prefixes is required,
-            // the TerminologyValidator would need to be enhanced.
+            // Note: The analyzer currently checks the entire identifier name including prefixes.
+            // Underscore-prefixed fields like "_CustValue" still contain "Cust" and will be flagged.
+            // This test validates current behavior. If teams prefer to ignore underscore prefixes
+            // (common for private backing fields), the TerminologyValidator.GetViolation method
+            // could be enhanced to strip leading underscores before validation.
             var rules = new List<TerminologyRule>
             {
                 new TerminologyRule("Cust", "Customer", true)
@@ -794,7 +795,11 @@ namespace BlueDotBrigade.Analyzers.Dsl
             // Edge case: Empty blocked term matches at every position (index 0, etc.)
             // The current implementation returns a rule because IndexOf("", 0) returns 0,
             // and an empty preferred term at index 0 + 0 doesn't match.
-            // This is documented behavior - DSL configurations should avoid empty blocked terms.
+            //
+            // Note: DSL configurations should avoid empty blocked terms. Consider adding
+            // input validation in DslRuleParser to skip rules with empty blocked terms,
+            // or in TerminologyValidator constructor to reject them. This test documents
+            // current behavior to prevent accidental regressions if validation is added.
             var rules = new List<TerminologyRule>
             {
                 new TerminologyRule("", "Customer", true)
