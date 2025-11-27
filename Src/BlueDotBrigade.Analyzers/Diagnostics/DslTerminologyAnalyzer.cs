@@ -130,12 +130,11 @@ public sealed class DslTerminologyAnalyzer : DiagnosticAnalyzer
 
     private static void ReportIfViolation(Action<Diagnostic> report, Location location, string identifierName, TerminologyValidator validator)
     {
-        var result = validator.Validate(identifierName);
-        if (!result.IsValid && result.ViolatedRule is not null)
+        var violatedRule = validator.GetViolation(identifierName);
+        if (violatedRule is not null)
         {
-            var rule = result.ViolatedRule;
-            var suffix = rule.Preferred is null ? string.Empty : $" Instead, use: '{rule.Preferred}'";
-            var diag = Diagnostic.Create(Rule, location, identifierName, rule.Blocked, suffix);
+            var suffix = violatedRule.Preferred is null ? string.Empty : $" Instead, use: '{violatedRule.Preferred}'";
+            var diag = Diagnostic.Create(Rule, location, identifierName, violatedRule.Blocked, suffix);
             report(diag);
         }
     }

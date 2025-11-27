@@ -10,7 +10,7 @@ namespace BlueDotBrigade.Analyzers.Dsl
         #region Valid Identifiers (Pass)
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_IdentifierIsEmpty()
+        public void GetViolation_ReturnsNull_When_IdentifierIsEmpty()
         {
             var rules = new List<TerminologyRule>
             {
@@ -18,24 +18,24 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate(string.Empty);
+            var result = validator.GetViolation(string.Empty);
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_NoRulesConfigured()
+        public void GetViolation_ReturnsNull_When_NoRulesConfigured()
         {
             var rules = new List<TerminologyRule>();
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("AnyCust");
+            var result = validator.GetViolation("AnyCust");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_IdentifierIsExactlyPreferredTerm()
+        public void GetViolation_ReturnsNull_When_IdentifierIsExactlyPreferredTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -43,13 +43,13 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("Customer");
+            var result = validator.GetViolation("Customer");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_IdentifierContainsPreferredTerm()
+        public void GetViolation_ReturnsNull_When_IdentifierContainsPreferredTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -57,13 +57,13 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("CustomerCount");
+            var result = validator.GetViolation("CustomerCount");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_IdentifierEndsWithPreferredTerm()
+        public void GetViolation_ReturnsNull_When_IdentifierEndsWithPreferredTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -71,13 +71,13 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("PreferredCustomer");
+            var result = validator.GetViolation("PreferredCustomer");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_BlockedTermNotInIdentifier()
+        public void GetViolation_ReturnsNull_When_BlockedTermNotInIdentifier()
         {
             var rules = new List<TerminologyRule>
             {
@@ -85,13 +85,13 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("OrderCount");
+            var result = validator.GetViolation("OrderCount");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_CaseSensitive_And_DifferentCase()
+        public void GetViolation_ReturnsNull_When_CaseSensitive_And_DifferentCase()
         {
             var rules = new List<TerminologyRule>
             {
@@ -99,9 +99,9 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("custValue");
+            var result = validator.GetViolation("custValue");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         #endregion
@@ -109,7 +109,7 @@ namespace BlueDotBrigade.Analyzers.Dsl
         #region Invalid Identifiers (Fail)
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_IdentifierStartsWithBlockedTerm()
+        public void GetViolation_ReturnsRule_When_IdentifierStartsWithBlockedTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -117,15 +117,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("CustValue");
+            var result = validator.GetViolation("CustValue");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.IsNotNull(result.ViolatedRule);
-            Assert.AreEqual("Cust", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Cust", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_IdentifierEndsWithBlockedTerm()
+        public void GetViolation_ReturnsRule_When_IdentifierEndsWithBlockedTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -133,15 +132,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("PreferredCust");
+            var result = validator.GetViolation("PreferredCust");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.IsNotNull(result.ViolatedRule);
-            Assert.AreEqual("Cust", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Cust", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_IdentifierContainsBlockedTerm()
+        public void GetViolation_ReturnsRule_When_IdentifierContainsBlockedTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -149,15 +147,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("TheCustValue");
+            var result = validator.GetViolation("TheCustValue");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.IsNotNull(result.ViolatedRule);
-            Assert.AreEqual("Cust", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Cust", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_IdentifierIsExactlyBlockedTerm()
+        public void GetViolation_ReturnsRule_When_IdentifierIsExactlyBlockedTerm()
         {
             var rules = new List<TerminologyRule>
             {
@@ -165,15 +162,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("Cust");
+            var result = validator.GetViolation("Cust");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.IsNotNull(result.ViolatedRule);
-            Assert.AreEqual("Cust", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Cust", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_CaseInsensitive_And_DifferentCase()
+        public void GetViolation_ReturnsRule_When_CaseInsensitive_And_DifferentCase()
         {
             var rules = new List<TerminologyRule>
             {
@@ -181,11 +177,10 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("custValue");
+            var result = validator.GetViolation("custValue");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.IsNotNull(result.ViolatedRule);
-            Assert.AreEqual("Cust", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Cust", result.Blocked);
         }
 
         #endregion
@@ -193,7 +188,7 @@ namespace BlueDotBrigade.Analyzers.Dsl
         #region Edge Cases with Metadata/MetaData style conflicts
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_IdentifierContainsPreferredTerm_MetaData()
+        public void GetViolation_ReturnsNull_When_IdentifierContainsPreferredTerm_MetaData()
         {
             var rules = new List<TerminologyRule>
             {
@@ -201,13 +196,13 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("MetaDataValue");
+            var result = validator.GetViolation("MetaDataValue");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_IdentifierContainsBlockedTerm_Metadata()
+        public void GetViolation_ReturnsRule_When_IdentifierContainsBlockedTerm_Metadata()
         {
             var rules = new List<TerminologyRule>
             {
@@ -215,14 +210,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("MetadataValue");
+            var result = validator.GetViolation("MetadataValue");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.AreEqual("Metadata", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Metadata", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_IdentifierContainsPreferredTerm_FileName()
+        public void GetViolation_ReturnsNull_When_IdentifierContainsPreferredTerm_FileName()
         {
             var rules = new List<TerminologyRule>
             {
@@ -230,13 +225,13 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("FileName");
+            var result = validator.GetViolation("FileName");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_IdentifierContainsBlockedTerm_Filename()
+        public void GetViolation_ReturnsRule_When_IdentifierContainsBlockedTerm_Filename()
         {
             var rules = new List<TerminologyRule>
             {
@@ -244,10 +239,10 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("Filename");
+            var result = validator.GetViolation("Filename");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.AreEqual("Filename", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Filename", result.Blocked);
         }
 
         #endregion
@@ -255,7 +250,7 @@ namespace BlueDotBrigade.Analyzers.Dsl
         #region Multiple Rules
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_FirstRuleMatches()
+        public void GetViolation_ReturnsRule_When_FirstRuleMatches()
         {
             var rules = new List<TerminologyRule>
             {
@@ -264,14 +259,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("CustValue");
+            var result = validator.GetViolation("CustValue");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.AreEqual("Cust", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Cust", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsViolation_When_SecondRuleMatches()
+        public void GetViolation_ReturnsRule_When_SecondRuleMatches()
         {
             var rules = new List<TerminologyRule>
             {
@@ -280,14 +275,14 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("ClientValue");
+            var result = validator.GetViolation("ClientValue");
 
-            Assert.IsFalse(result.IsValid);
-            Assert.AreEqual("Client", result.ViolatedRule.Blocked);
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Client", result.Blocked);
         }
 
         [TestMethod]
-        public void Validate_ReturnsValid_When_NoRuleMatches()
+        public void GetViolation_ReturnsNull_When_NoRuleMatches()
         {
             var rules = new List<TerminologyRule>
             {
@@ -296,9 +291,9 @@ namespace BlueDotBrigade.Analyzers.Dsl
             };
             var validator = new TerminologyValidator(rules);
 
-            var result = validator.Validate("CustomerValue");
+            var result = validator.GetViolation("CustomerValue");
 
-            Assert.IsTrue(result.IsValid);
+            Assert.IsNull(result);
         }
 
         #endregion

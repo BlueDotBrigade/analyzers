@@ -4,40 +4,6 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Represents the result of validating an identifier against terminology rules.
-/// </summary>
-public sealed class ValidationResult
-{
-    /// <summary>
-    /// Gets a value indicating whether the identifier is valid (no blocked terms found).
-    /// </summary>
-    public bool IsValid { get; }
-
-    /// <summary>
-    /// Gets the rule that was violated, or <c>null</c> if the identifier is valid.
-    /// </summary>
-    public TerminologyRule? ViolatedRule { get; }
-
-    private ValidationResult(bool isValid, TerminologyRule? violatedRule)
-    {
-        IsValid = isValid;
-        ViolatedRule = violatedRule;
-    }
-
-    /// <summary>
-    /// Creates a successful validation result indicating the identifier is valid.
-    /// </summary>
-    public static ValidationResult Success { get; } = new(true, null);
-
-    /// <summary>
-    /// Creates a failed validation result indicating a rule was violated.
-    /// </summary>
-    /// <param name="violatedRule">The rule that was violated.</param>
-    /// <returns>A validation result representing the violation.</returns>
-    public static ValidationResult Violation(TerminologyRule violatedRule) => new(false, violatedRule);
-}
-
-/// <summary>
 /// Validates identifiers against terminology rules to ensure blocked terms are not used.
 /// </summary>
 /// <remarks>
@@ -62,12 +28,12 @@ public sealed class TerminologyValidator
     /// Validates an identifier against all configured terminology rules.
     /// </summary>
     /// <param name="identifierName">The identifier name to validate.</param>
-    /// <returns>A <see cref="ValidationResult"/> indicating whether the identifier is valid.</returns>
-    public ValidationResult Validate(string identifierName)
+    /// <returns>The violated <see cref="TerminologyRule"/> if a blocked term is found; otherwise, <c>null</c>.</returns>
+    public TerminologyRule GetViolation(string identifierName)
     {
         if (string.IsNullOrEmpty(identifierName) || _rules.Count == 0)
         {
-            return ValidationResult.Success;
+            return null;
         }
 
         foreach (var rule in _rules)
@@ -99,10 +65,10 @@ public sealed class TerminologyValidator
                     continue;
                 }
 
-                return ValidationResult.Violation(rule);
+                return rule;
             }
         }
 
-        return ValidationResult.Success;
+        return null;
     }
 }
