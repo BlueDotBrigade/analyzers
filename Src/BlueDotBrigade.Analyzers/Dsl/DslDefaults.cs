@@ -10,10 +10,10 @@ public static class DslDefaults
 
     public const string DefaultDslXml = """
 <dsl>
-  <term prefer=\"Customer\" block=\"Client\" case=\"sensitive\"/>
-  <term prefer=\"Customer\" case=\"sensitive\">
-    <alias block=\"Client\"/>
-    <alias block=\"Cust\"/>
+  <term prefer="Customer" block="Client" case="sensitive"/>
+  <term prefer="Customer" case="sensitive">
+    <alias block="Client"/>
+    <alias block="Cust"/>
   </term>
 </dsl>
 """;

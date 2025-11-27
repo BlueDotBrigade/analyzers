@@ -255,5 +255,226 @@ namespace BlueDotBrigade.Analyzers.Dsl
         }
 
         #endregion
+
+        #region Acronyms and Compound Words Configuration
+
+        [TestMethod]
+        public void Parse_ReturnsRules_For_AcronymScenario_IO()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="IO" block="Io" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("Io", rules[0].Blocked);
+            Assert.AreEqual("IO", rules[0].Preferred);
+            Assert.IsTrue(rules[0].CaseSensitive);
+        }
+
+        [TestMethod]
+        public void Parse_ReturnsRules_For_AcronymScenario_HTTP()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="HTTP" block="Http" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("Http", rules[0].Blocked);
+            Assert.AreEqual("HTTP", rules[0].Preferred);
+            Assert.IsTrue(rules[0].CaseSensitive);
+        }
+
+        [TestMethod]
+        public void Parse_ReturnsRules_For_MultipleAcronyms()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="IO" block="Io" case="sensitive"/>
+                    <term prefer="HTTP" block="Http" case="sensitive"/>
+                    <term prefer="URL" block="Url" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(3, rules.Count);
+            
+            var ioRule = rules.First(r => r.Preferred == "IO");
+            Assert.AreEqual("Io", ioRule.Blocked);
+            
+            var httpRule = rules.First(r => r.Preferred == "HTTP");
+            Assert.AreEqual("Http", httpRule.Blocked);
+            
+            var urlRule = rules.First(r => r.Preferred == "URL");
+            Assert.AreEqual("Url", urlRule.Blocked);
+        }
+
+        [TestMethod]
+        public void Parse_ReturnsRules_For_CompoundWordsWithAliases()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="MetaData" case="sensitive">
+                        <alias block="Metadata"/>
+                        <alias block="metadata"/>
+                        <alias block="METADATA"/>
+                    </term>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(3, rules.Count);
+            Assert.IsTrue(rules.All(r => r.Preferred == "MetaData"));
+            Assert.IsTrue(rules.Any(r => r.Blocked == "Metadata"));
+            Assert.IsTrue(rules.Any(r => r.Blocked == "metadata"));
+            Assert.IsTrue(rules.Any(r => r.Blocked == "METADATA"));
+        }
+
+        #endregion
+
+        #region Snake_case and Special Character Scenarios
+
+        [TestMethod]
+        public void Parse_ReturnsRules_For_SnakeCaseTerms()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="customer_id" block="cust_id" case="insensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("cust_id", rules[0].Blocked);
+            Assert.AreEqual("customer_id", rules[0].Preferred);
+            Assert.IsFalse(rules[0].CaseSensitive);
+        }
+
+        [TestMethod]
+        public void Parse_ReturnsRules_For_UpperCaseConstants()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="CUSTOMER_ID" block="CUST_ID" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("CUST_ID", rules[0].Blocked);
+            Assert.AreEqual("CUSTOMER_ID", rules[0].Preferred);
+            Assert.IsTrue(rules[0].CaseSensitive);
+        }
+
+        #endregion
+
+        #region Edge Cases - Special Characters and Whitespace
+
+        [TestMethod]
+        public void Parse_ReturnsRules_When_PreferAttributeHasWhitespace()
+        {
+            // Note: Whitespace in prefer/block attributes is preserved as-is
+            const string xml = """
+                <dsl>
+                    <term prefer="Customer " block="Client" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("Customer ", rules[0].Preferred);
+        }
+
+        [TestMethod]
+        public void Parse_ReturnsRules_When_TermsContainNumbers()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="IPv4" block="IP4" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("IP4", rules[0].Blocked);
+            Assert.AreEqual("IPv4", rules[0].Preferred);
+        }
+
+        [TestMethod]
+        public void Parse_ReturnsRules_When_TermsContainUnderscores()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="_customer" block="_cust" case="sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.AreEqual("_cust", rules[0].Blocked);
+            Assert.AreEqual("_customer", rules[0].Preferred);
+        }
+
+        [TestMethod]
+        public void Parse_HandlesMixedCaseAttributeValues()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="Customer" block="Client" case="INSENSITIVE"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.IsFalse(rules[0].CaseSensitive);
+        }
+
+        [TestMethod]
+        public void Parse_HandlesSensitiveAttribute_ExplicitValue()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="Customer" block="Client" case="Sensitive"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            Assert.IsTrue(rules[0].CaseSensitive);
+        }
+
+        [TestMethod]
+        public void Parse_HandlesInvalidCaseAttribute_DefaultsToSensitive()
+        {
+            const string xml = """
+                <dsl>
+                    <term prefer="Customer" block="Client" case="invalid"/>
+                </dsl>
+                """;
+
+            var rules = DslRuleParser.Parse(xml);
+
+            Assert.AreEqual(1, rules.Count);
+            // Invalid case value should default to sensitive
+            Assert.IsTrue(rules[0].CaseSensitive);
+        }
+
+        #endregion
     }
 }
