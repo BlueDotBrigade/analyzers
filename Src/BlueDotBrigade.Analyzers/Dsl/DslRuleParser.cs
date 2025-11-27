@@ -62,7 +62,7 @@ public static class DslRuleParser
             var blockedAttr = (string)t.Attribute("block");
             if (!string.IsNullOrWhiteSpace(blockedAttr))
             {
-                list.Add(new TerminologyRule(blockedAttr!, prefer, caseSensitive));
+                list.Add(new TerminologyRule(blockedAttr, prefer, caseSensitive));
             }
 
             foreach (var alias in t.Elements("alias"))
@@ -70,7 +70,7 @@ public static class DslRuleParser
                 var blocked = (string)alias.Attribute("block");
                 if (!string.IsNullOrWhiteSpace(blocked))
                 {
-                    list.Add(new TerminologyRule(blocked!, prefer, caseSensitive));
+                    list.Add(new TerminologyRule(blocked, prefer, caseSensitive));
                 }
             }
         }
