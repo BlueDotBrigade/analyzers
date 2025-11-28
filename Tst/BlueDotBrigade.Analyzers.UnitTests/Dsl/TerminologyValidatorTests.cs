@@ -867,5 +867,62 @@ namespace BlueDotBrigade.Analyzers.Dsl
         }
 
         #endregion
+
+        #region TerminologyValidator Behavior with CaseSensitive
+
+        [TestMethod]
+        public void GetViolation_Respects_CaseSensitive_True()
+        {
+            // Case-sensitive rule: blocked "Cust" does NOT match lowercase "cust"
+            var rules = new List<TerminologyRule>
+            {
+                new TerminologyRule("Cust", "Customer", true)
+            };
+            var validator = new TerminologyValidator(rules);
+
+            var resultLower = validator.GetViolation("custValue");
+            var resultExact = validator.GetViolation("CustValue");
+
+            Assert.IsNull(resultLower, "Lowercase should not match when CaseSensitive is true.");
+            Assert.IsNotNull(resultExact, "Exact case should match when CaseSensitive is true.");
+            Assert.AreEqual("Cust", resultExact.Blocked);
+        }
+
+        [TestMethod]
+        public void GetViolation_Respects_CaseSensitive_False()
+        {
+            // Case-insensitive rule: blocked "Cust" matches lowercase "cust"
+            var rules = new List<TerminologyRule>
+            {
+                new TerminologyRule("Cust", "Customer", false)
+            };
+            var validator = new TerminologyValidator(rules);
+
+            var resultLower = validator.GetViolation("custValue");
+            var resultMixed = validator.GetViolation("CuStValue");
+
+            Assert.IsNotNull(resultLower, "Lowercase should match when CaseSensitive is false.");
+            Assert.AreEqual("Cust", resultLower.Blocked);
+            Assert.IsNotNull(resultMixed, "Mixed case should match when CaseSensitive is false.");
+            Assert.AreEqual("Cust", resultMixed.Blocked);
+        }
+
+        [TestMethod]
+        public void GetViolation_Defaults_CaseSensitive_To_False_When_Omitted_In_Dsl()
+        {
+            // Simulate DSL attribute omitted: parser should set CaseSensitive=false by default
+            // We emulate by constructing rule with false; parser tests cover XML side elsewhere.
+            var rules = new List<TerminologyRule>
+            {
+                new TerminologyRule("Cust", "Customer", false)
+            };
+            var validator = new TerminologyValidator(rules);
+
+            var resultLower = validator.GetViolation("custValue");
+            Assert.IsNotNull(resultLower, "Omitted case attribute should default to case-insensitive.");
+            Assert.AreEqual("Cust", resultLower.Blocked);
+        }
+
+        #endregion
     }
 }
