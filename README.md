@@ -1,6 +1,6 @@
 # BlueDotBrigade.Analyzers
 
-**BlueDotBrigade.Analyzers** is a custom Roslyn analyzer that enforces domain-specific naming consistency in C# codebases using a simple XML-based Domain-Specific Language (DSL).
+Enforces domain-specific naming consistency in C# codebases using a simple XML-based Domain-Specific Language (DSL).
 
 ---
 
