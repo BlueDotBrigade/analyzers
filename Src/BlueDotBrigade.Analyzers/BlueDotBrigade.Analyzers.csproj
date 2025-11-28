@@ -1,68 +1,81 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
-
+		
 		<!-- NuGet metadata -->
 		<PackageId>BlueDotBrigade.Analyzers</PackageId>
 		<Version>1.0.0</Version>
 		<Authors>BlueDotBrigade</Authors>
+		<Company>Blue Dot Brigade</Company>
+		<Owners>Blue Dot Brigade</Owners>
 		<Description>Roslyn analyzer: enforces preferred/blocked naming pairs defined in a DSL XML.</Description>
+		<Copyright>© 2025 Blue Dot Brigade</Copyright>
+		<IsPackable>true</IsPackable>
+		<PackageReleaseNotes>This library is currently a work in progress. As a result, backwards compatibility is not guaranteed.</PackageReleaseNotes>
+		<PackageTags>BlueDotBrigade;Roslyn; Analyzers;</PackageTags>
+		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<PackageProjectUrl>https://github.com/BlueDotBrigade/analyzers</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/BlueDotBrigade/analyzers.git</RepositoryUrl>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		
 		<!-- Analyzer packaging: we disable default build output and explicitly include analyzer DLL below -->
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<DevelopmentDependency>true</DevelopmentDependency>
-
+		
 		<!-- Analyzer projects should enforce extended analyzer rules -->
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-	</PropertyGroup>
 
+		<!-- Include debug symbols in package. -->
+		<DebugType>portable</DebugType>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	</PropertyGroup>
 	<ItemGroup>
 		<!-- Expose internals to unit tests -->
 		<InternalsVisibleTo Include="BlueDotBrigade.Analyzers.UnitTests" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
-	  <Compile Remove="bin\**" />
-	  <EmbeddedResource Remove="bin\**" />
-	  <None Remove="bin\**" />
+		<Compile Remove="bin\**" />
+		<EmbeddedResource Remove="bin\**" />
+		<None Remove="bin\**" />
 	</ItemGroup>
-
+	
+	<PropertyGroup>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<!-- Include="....\README.md" Points to the actual file outside your project. Link="README.md" Makes it appear in the project as if it were physically named README.md. Pack="true" Tells dotnet pack to include it in the .nupkg. PackagePath="" Places the file at the package root, which is required because <PackageReadmeFile> expects it there. -->
+		<None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+	
 	<ItemGroup>
 		<!-- Roslyn bits (dev-only for the analyzer) -->
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
 	</ItemGroup>
-
+	
 	<!-- Analyzer configuration best-practice for solution-level + project-level DSL -->
 	<ItemGroup>
 		<!-- Allow overriding the DSL filename; expose to compiler via AnalyzerConfig -->
 		<CompilerVisibleProperty Include="AnalyzerDslFileName" />
 		<CompilerVisibleProperty Include="MSBuildProjectDirectory" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
 		<!-- Include solution-level DSL by default if present next to Directory.Build.props (or solution root). -->
 		<AdditionalFiles Include="$(SolutionDir)$(AnalyzerDslFileName)" Condition="Exists('$(SolutionDir)$(AnalyzerDslFileName)')" />
 		<!-- Include project-level DSL if present; project-level supersedes solution-level at analysis time. -->
 		<AdditionalFiles Include="$(MSBuildProjectDirectory)\$(AnalyzerDslFileName)" Condition="Exists('$(MSBuildProjectDirectory)\$(AnalyzerDslFileName)')" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <None Remove="C:\Code\BlueDotBrigade\OpenSource\analyzers\Src\BlueDotBrigade.Analyzers\bin\Debug\net10.0\BlueDotBrigade.Analyzers.dll" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Remove="C:\Code\BlueDotBrigade\OpenSource\analyzers\Src\BlueDotBrigade.Analyzers\bin\Debug\net10.0\BlueDotBrigade.Analyzers.dll" />
-	</ItemGroup>
-
+	
 	<ItemGroup>
 		<!-- Ensure the analyzer assembly is included in the nupkg under analyzers/dotnet/cs -->
 		<None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 	</ItemGroup>
-
 </Project>

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36705.20 d17.14
+VisualStudioVersion = 17.14.36705.20
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueDotBrigade.Analyzers", "Src\BlueDotBrigade.Analyzers\BlueDotBrigade.Analyzers.csproj", "{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}"
 EndProject
@@ -27,6 +27,7 @@ Global
 		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CA8DE41-CF3B-4EB9-B6C3-4B8F7BBD3D6E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFAC78F0-2B83-4D2D-B249-51E5AD5C5E72}.Release|Any CPU.ActiveCfg = Release|Any CPU
